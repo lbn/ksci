@@ -20,13 +20,17 @@ ksci_client = client.KSCI(os.getenv("KSCI_URL"))
 kubernetes.config.load_kube_config()
 
 
+def k8s_job_name(job: db.RunJob):
+    return f"user-job-{job.job_id}"
+
+
 def upload_script(steps: tp.List[str]) -> client.KSCIObject:
     obj = ksci_client.object()
     obj.upload(("\n".join(steps)).encode())
     return obj
 
 
-def create_job_object(job_name: str, job: db.RunJob) -> klient.V1Job:
+def create_job_object(job: db.RunJob) -> klient.V1Job:
     volume_workdir = klient.V1Volume(
         name="workdir",
     )
@@ -100,41 +104,39 @@ def create_job_object(job_name: str, job: db.RunJob) -> klient.V1Job:
     job = klient.V1Job(
         api_version="batch/v1",
         kind="Job",
-        metadata=klient.V1ObjectMeta(name=job_name),
+        metadata=klient.V1ObjectMeta(name=k8s_job_name(job)),
         spec=spec,
     )
     return job
 
 
-def get_ready_job_pod(job_name: str) -> klient.V1Pod:
+def watch_pod_phase(job: db.RunJob) -> klient.V1Pod:
     core_v1 = klient.CoreV1Api()
     watch = kubernetes.watch.Watch()
+    started_log = False
+    termination_statuses = {db.RunJobStatus.succeeded, db.RunJobStatus.failed}
     for event in watch.stream(
         func=core_v1.list_namespaced_pod,
         namespace=NAMESPACE_JOBS,
-        label_selector=f"job-name={job_name}",
+        label_selector=f"job-name={k8s_job_name(job)}",
     ):
-        if event["object"].status.phase in ("Running", "Succeeded"):
+        job_status = db.RunJobStatus(event["object"].status.phase.lower())
+        if job_status != job.status:
+            job.to_status(job_status)
+        if not started_log and job_status in (
+            {db.RunJobStatus.running} | termination_statuses
+        ):
+            started_log = True
+            log_writer.delay(job.dict(), event["object"].metadata.name)
+        if job_status in termination_statuses:
             watch.stop()
-            return event["object"]
 
 
-def write_logs(pod: klient.V1Pod, kscii_object: client.KSCIObject):
-    core_v1 = klient.CoreV1Api()
-    watch = kubernetes.watch.Watch()
-    for line in watch.stream(
-        core_v1.read_namespaced_pod_log,
-        name=pod.metadata.name,
-        namespace=NAMESPACE_JOBS,
-    ):
-        kscii_object.append((line + "\n").encode())
-
-
-def create_job(job_name: str, job: db.RunJob):
+def create_job(job: db.RunJob):
     batch_v1 = klient.BatchV1Api()
     batch_v1.create_namespaced_job(
         NAMESPACE_JOBS,
-        create_job_object(job_name, job),
+        create_job_object(job),
     )
 
 
@@ -150,21 +152,23 @@ def clone_and_upload(job: db.RunJob):
 @celery_app.task
 def run(job_data: dict):
     job = db.RunJob(**job_data)
-    job_name = f"user-job-{job.job_id}"
     clone_and_upload(job)
     try:
-        create_job(job_name, job)
-        job.to_status(db.RunJobStatus.created)
-        pod = get_ready_job_pod(job_name)
-        job.to_status(db.RunJobStatus.running)
-        write_logs(pod, ksci_client.object(job.object_id_logs))
-
-        batch_v1 = klient.BatchV1Api()
-        resp = batch_v1.read_namespaced_job_status(job_name, NAMESPACE_JOBS)
-        open("jobstatus_bad.json", "w").write(
-            json.dumps(klient.ApiClient().sanitize_for_serialization(resp))
-        )
-
+        create_job(job)
+        watch_pod_phase(job)
     except klient.ApiException as e:
-        print("EXCEPTION", e)
-    return None
+        job.to_status(db.RunJobStatus.failed)
+
+
+@celery_app.task
+def log_writer(job_data: dict, pod_name: str):
+    job = db.RunJob(**job_data)
+    kscii_object = ksci_client.object(job.object_id_logs)
+    core_v1 = klient.CoreV1Api()
+    watch = kubernetes.watch.Watch()
+    for line in watch.stream(
+        core_v1.read_namespaced_pod_log,
+        name=pod_name,
+        namespace=NAMESPACE_JOBS,
+    ):
+        kscii_object.append((line + "\n").encode())

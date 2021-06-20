@@ -2,6 +2,7 @@ import os
 import typing as tp
 import uuid
 import enum
+import json
 
 import redis
 import pydantic
@@ -20,9 +21,9 @@ def new_id() -> str:
 
 class RunJobStatus(enum.Enum):
     pending = "pending"
-    created = "created"
+    unknown = "unknown"
     running = "running"
-    completed = "completed"
+    succeeded = "succeeded"
     failed = "failed"
 
 
@@ -36,20 +37,32 @@ class RunJob(pydantic.BaseModel):
     object_id_cv: str = pydantic.Field(default_factory=new_id)
     status: str = RunJobStatus.pending
 
+    class Config:
+        use_enum_values = True
+
     @staticmethod
     def _key(job_id: str):
         return f"job:{job_id}"
 
+    def update(self, field: str, value: tp.Any):
+        rclient.hset(self._key(self.job_id), field, json.dumps(value))
+
     def save(self):
-        rclient.set(self._key(self.job_id), self.json())
+        for key, value in json.loads(self.json()).items():
+            self.update(key, value)
 
     @classmethod
     def load(cls, job_id: str) -> "RunJob":
-        return cls.parse_raw(rclient.get(cls._key(job_id)))
+        return cls(
+            **{
+                key.decode(): json.loads(value)
+                for key, value in rclient.hgetall(cls._key(job_id)).items()
+            }
+        )
 
     def to_status(self, status: RunJobStatus):
         self.status = status
-        self.save()
+        self.update("status", status.value)
 
 
 class Object:

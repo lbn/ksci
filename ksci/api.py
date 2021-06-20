@@ -54,6 +54,12 @@ def job_submit(body: SubmitRequest):
     )
 
 
+@app.route("/job/<job_id>", methods=["GET"])
+@validate()
+def job(job_id: str) -> db.RunJob:
+    return db.RunJob.load(job_id)
+
+
 @app.route("/object", methods=["POST"])
 def object_create():
     return str(uuid.uuid4())
