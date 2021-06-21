@@ -53,6 +53,8 @@ class RunJob(pydantic.BaseModel):
 
     @classmethod
     def load(cls, job_id: str) -> "RunJob":
+        if not rclient.exists(cls._key(job_id)):
+            raise NotFoundError()
         return cls(
             **{
                 key.decode(): json.loads(value)

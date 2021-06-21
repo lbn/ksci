@@ -33,7 +33,7 @@ class KSCI:
         return KSCIObject(self, object_id)
 
     def url_for(self, path: str) -> str:
-        return urllib.parse.urljoin(self._base_url, path)
+        return urllib.parse.urljoin(self._base_url, f"api/{path}")
 
     def do(self, method: str, path: str, *args, **kwargs):
         return requests.request(method, self.url_for(path), *args, **kwargs)

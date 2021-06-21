@@ -45,7 +45,6 @@ def create_job_object(job: db.RunJob) -> klient.V1Job:
     )
 
     cv_url = ksci_client.object(job.object_id_cv).url
-    finaliser_url = "http://sw1.archer.onl/download/ksci-finaliser"
     finaliser_path = "/workdir/.ksci-internal/ksci-finaliser"
     steps = job.steps.copy()
     steps.append(finaliser_path)
@@ -76,17 +75,16 @@ def create_job_object(job: db.RunJob) -> klient.V1Job:
             init_containers=[
                 klient.V1Container(
                     name="prepare",
-                    image="alpine:latest",
+                    image="larcher/ksci-prep:latest",
                     args=[
                         "/bin/sh",
                         "-c",
                         "; ".join(
                             [
                                 "mkdir /workdir/.ksci-internal",
-                                f"wget {finaliser_url} -O {finaliser_path}",
+                                "cp /steps-binaries/* /workdir/.ksci-internal",
                                 f"wget {steps_script_url} -O {steps_path}",
                                 f"wget {cv_url} -O /tmp/cv.zip",
-                                f"chmod +x {finaliser_path}",
                                 "unzip /tmp/cv.zip -d /workdir",
                             ]
                         ),

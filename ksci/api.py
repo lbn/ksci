@@ -6,14 +6,21 @@ import urllib.parse
 from flask import Flask, request, Response, redirect, url_for
 from flask_pydantic import validate
 import pydantic
+from flask_cors import CORS
+
 
 from ksci import tasks
 from ksci import db
 
-app = Flask(__name__)
-
-
 ksci_url = os.getenv("KSCI_URL")
+app = Flask(__name__, static_folder="static", static_url_path="")
+CORS(
+    app,
+    origins=[
+        "http://localhost:3000",
+        ksci_url,
+    ],
+)
 
 
 class SubmitRequest(pydantic.BaseModel):
@@ -28,12 +35,7 @@ class SubmitResponse(pydantic.BaseModel):
     output: str
 
 
-@app.route("/")
-def index():
-    return "ksci"
-
-
-@app.route("/job/submit", methods=["POST"])
+@app.route("/api/job/submit", methods=["POST"])
 @validate()
 def job_submit(body: SubmitRequest):
     job = db.RunJob(
@@ -54,33 +56,46 @@ def job_submit(body: SubmitRequest):
     )
 
 
-@app.route("/job/<job_id>", methods=["GET"])
+@app.route("/api/job/<job_id>", methods=["GET"])
 @validate()
 def job(job_id: str) -> db.RunJob:
     return db.RunJob.load(job_id)
 
 
-@app.route("/object", methods=["POST"])
+@app.route("/api/object", methods=["POST"])
 def object_create():
     return str(uuid.uuid4())
 
 
-@app.route("/object/<object_id>", methods=["PUT"])
+@app.route("/api/object/<object_id>", methods=["PUT"])
 def object_upload(object_id):
     db.Object(object_id).upload(request.get_data())
     return "", 201
 
 
-@app.route("/object/<object_id>", methods=["PATCH"])
+@app.route("/api/object/<object_id>", methods=["PATCH"])
 def object_append(object_id):
     db.Object(object_id).append(request.get_data())
     return "", 201
 
 
-@app.route("/object/<object_id>", methods=["GET"])
+@app.route("/api/object/<object_id>", methods=["GET"])
 def object_download(object_id):
     try:
         data = db.Object(object_id).download()
+        if request.args.get("output") is not None:
+            return Response(
+                data,
+                mimetype="application/zip",
+                headers={
+                    "Content-disposition": f"attachment; filename=output-{object_id}.zip"
+                },
+            )
         return Response(data, mimetype="application/octet-stream")
     except db.NotFoundError:
         return "", 404
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return app.send_static_file("index.html")
