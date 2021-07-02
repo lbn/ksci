@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ksci-frontend
+  labels:
+    app: ksci-frontend
+spec:
+  selector:
+    matchLabels:
+      app: ksci-frontend
+  template:
+    metadata:
+      labels:
+        app: ksci-frontend
+    spec:
+      containers:
+        - name: ksci-frontend
+          image: larcher/ksci-frontend
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ksci-frontend
+  labels:
+    run: ksci-frontend
+spec:
+  ports:
+    - port: 80
+      protocol: TCP
+  selector:
+    app: ksci-frontend

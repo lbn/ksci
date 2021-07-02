@@ -1,0 +1,7 @@
+auth:
+  existingPasswordSecret: rabbitmq
+  existingErlangSecret: rabbitmq
+  username: ksci
+
+persistence:
+  enabled: false

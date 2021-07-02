@@ -1,0 +1,20 @@
+
+[helmRepos]
+  bitnami = "https://charts.bitnami.com/bitnami"
+
+[namespaces]
+  [namespaces.default]
+
+[apps]
+  [apps.redis]
+    namespace = "default"
+    enabled = true
+    chart = "bitnami/redis"
+    version = "14.6.3"
+    valuesFile = "infra/k8s/values/redis.yaml"
+  [apps.rabbitmq]
+    namespace = "default"
+    enabled = true
+    chart = "bitnami/rabbitmq"
+    version = "8.16.1"
+    valuesFile = "infra/k8s/values/rabbitmq.yaml"

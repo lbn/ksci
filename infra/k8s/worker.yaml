@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ksci-worker
+  labels:
+    app: ksci-worker
+spec:
+  selector:
+    matchLabels:
+      app: ksci-worker
+  template:
+    metadata:
+      labels:
+        app: ksci-worker
+    spec:
+      containers:
+        - name: ksci-worker
+          image: larcher/ksci
+          envFrom:
+            - configMapRef:
+                name: ksci
+          env:
+            - name: KSCI_RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq
+                  key: rabbitmq-password
+          command: ["celery", "-A", "ksci.tasks", "worker", "--loglevel=INFO"]

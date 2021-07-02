@@ -7,8 +7,10 @@ import json
 import redis
 import pydantic
 
+from ksci.config import config
 
-rclient = redis.from_url(os.getenv("REDIS_URL"))
+
+rclient = redis.from_url(config.redis.url)
 
 
 class NotFoundError(Exception):

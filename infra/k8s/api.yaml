@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ksci-api
+  labels:
+    app: ksci-api
+spec:
+  selector:
+    matchLabels:
+      app: ksci-api
+  template:
+    metadata:
+      labels:
+        app: ksci-api
+    spec:
+      containers:
+        - name: ksci-api
+          image: larcher/ksci
+          envFrom:
+            - configMapRef:
+                name: ksci
+          env:
+            - name: KSCI_RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq
+                  key: rabbitmq-password
+          command:
+            ["python", "-m", "flask", "run", "-h", "0.0.0.0", "-p", "8000"]
+          ports:
+            - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ksci-api
+  labels:
+    run: ksci-api
+spec:
+  ports:
+    - port: 80
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app: ksci-api

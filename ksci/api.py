@@ -1,24 +1,22 @@
-import os
 import typing as tp
 import uuid
 import urllib.parse
 
-from flask import Flask, request, Response, redirect, url_for
+from flask import Flask, request, Response, url_for
 from flask_pydantic import validate
 import pydantic
 from flask_cors import CORS
 
-
 from ksci import tasks
 from ksci import db
+from ksci.config import config
 
-ksci_url = os.getenv("KSCI_URL")
 app = Flask(__name__, static_folder="static", static_url_path="")
 CORS(
     app,
     origins=[
         "http://localhost:3000",
-        ksci_url,
+        config.url,
     ],
 )
 
@@ -48,10 +46,10 @@ def job_submit(body: SubmitRequest):
     return SubmitResponse(
         job=job,
         log=urllib.parse.urljoin(
-            ksci_url, url_for("object_download", object_id=job.object_id_logs)
+            config.url, url_for("object_download", object_id=job.object_id_logs)
         ),
         output=urllib.parse.urljoin(
-            ksci_url, url_for("object_download", object_id=job.object_id_output)
+            config.url, url_for("object_download", object_id=job.object_id_output)
         ),
     )
 

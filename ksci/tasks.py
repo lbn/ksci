@@ -1,7 +1,6 @@
 import os
 import typing as tp
 import tempfile
-import json
 import io
 
 import celery
@@ -11,13 +10,15 @@ import git
 
 from ksci import client
 from ksci import db
+from ksci.config import config
 
 NAMESPACE_JOBS = "jobs"
 
-celery_app = celery.Celery("ksci", broker=os.getenv("CELERY_URL"), backend="rpc://")
-ksci_client = client.KSCI(os.getenv("KSCI_URL"))
+print("CELERY", config.rabbitmq.url)
+celery_app = celery.Celery("ksci", broker=config.rabbitmq.url, backend="rpc://")
+ksci_client = client.KSCI(config.url)
 
-kubernetes.config.load_kube_config()
+kubernetes.config.load_incluster_config()
 
 
 def k8s_job_name(job: db.RunJob):

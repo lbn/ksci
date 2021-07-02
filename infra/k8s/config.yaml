@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ksci
+data:
+  KSCI_URL: "http://ksci-api.default.svc.cluster.local/"
+  KSCI_REDIS_HOST: "redis-master.default.svc.cluster.local"
+  KSCI_RABBITMQ_HOST: "rabbitmq.default.svc.cluster.local"
+  KSCI_RABBITMQ_USERNAME: "ksci"
