@@ -32,12 +32,8 @@ def upload_script(steps: tp.List[str]) -> client.KSCIObject:
 
 
 def create_job_object(job: db.RunJob) -> klient.V1Job:
-    volume_workdir = klient.V1Volume(
-        name="workdir",
-    )
-    volume_output = klient.V1Volume(
-        name="output",
-    )
+    volume_workdir = klient.V1Volume(name="workdir",)
+    volume_output = klient.V1Volume(name="output",)
     volume_mount_workdir = klient.V1VolumeMount(
         name=volume_workdir.name, mount_path="/workdir"
     )
@@ -134,8 +130,7 @@ def watch_pod_phase(job: db.RunJob) -> klient.V1Pod:
 def create_job(job: db.RunJob):
     batch_v1 = klient.BatchV1Api()
     batch_v1.create_namespaced_job(
-        NAMESPACE_JOBS,
-        create_job_object(job),
+        NAMESPACE_JOBS, create_job_object(job),
     )
 
 
@@ -162,12 +157,10 @@ def run(job_data: dict):
 @celery_app.task
 def log_writer(job_data: dict, pod_name: str):
     job = db.RunJob(**job_data)
-    kscii_object = ksci_client.object(job.object_id_logs)
+    kscii_log = ksci_client.log(job.object_id_logs)
     core_v1 = klient.CoreV1Api()
     watch = kubernetes.watch.Watch()
     for line in watch.stream(
-        core_v1.read_namespaced_pod_log,
-        name=pod_name,
-        namespace=NAMESPACE_JOBS,
+        core_v1.read_namespaced_pod_log, name=pod_name, namespace=NAMESPACE_JOBS,
     ):
-        kscii_object.append((line + "\n").encode())
+        kscii_log.append((line + "\n").encode())

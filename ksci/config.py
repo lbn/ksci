@@ -11,8 +11,12 @@ class AppConfig:
         port = environ.var(default=6379)
 
         @property
-        def url(self):
+        def url(self) -> str:
             return f"redis://{self.host}:{self.port}/0"
+
+    @environ.config
+    class Cassandra:
+        hosts = environ.var()
 
     @environ.config
     class RabbitMQ:
@@ -22,14 +26,12 @@ class AppConfig:
         port = environ.var(default=5672)
 
         @property
-        def url(self):
+        def url(self) -> str:
             return f"amqp://{self.username}:{self.password}@{self.host}:{self.port}//"
 
     rabbitmq: RabbitMQ = environ.group(RabbitMQ)
     redis: Redis = environ.group(Redis)
+    cassandra: Cassandra = environ.group(Cassandra)
 
 
-import os
-
-print(os.environ)
 config: AppConfig = AppConfig.from_environ()

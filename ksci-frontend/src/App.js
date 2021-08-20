@@ -92,7 +92,7 @@ function Job() {
     objectIdLogs: null
   });
   const [objectIdLog, setObjectIdLog] = useState(null);
-  const [logs, setLogs] = useState(null);
+  const [logs, setLogs] = useState([]);
   const colours = {
     pending: "gray",
     running: "yellow",
@@ -101,23 +101,41 @@ function Job() {
   };
   const terminatedStatuses = ["succeeded", "failed"];
 
+  let lastLogID = null;
+
   async function getJob() {
-    return fetch(`/api/job/${jobId}`).then(res => res.json()).then(async (job) => {
+    return fetch(`/api/job/${jobId}`, {
+      headers: {
+        "accepts": "application/json"
+      }
+    }).then(res => res.json()).then(async (job) => {
       return job;
     }, (error) => {
       // alert("error")
     })
   }
   function getLogs(objectId) {
-    return fetch(`/api/object/${objectId}`).then((res) => {
-      return res.text().then(logs => {
-        return logs.split("\n")
+    let params = {};
+    if (lastLogID != null) {
+      params["after-id"] = lastLogID;
+    }
+    return fetch(`/api/log/${objectId}?` + new URLSearchParams(params), {
+      headers: {
+        "accepts": "application/json"
+      }
+    }).then((res) => {
+      return res.text().then(logLines => {
+        if (logLines.length > 0) {
+          lastLogID = res.headers.get("Last-Log-Id");
+        }
+        return logLines.split("\n");
       })
     }, (error) => {
       // alert("error")
     })
   }
   useEffect(() => {
+    // Get job, status and final logs
     async function fetchMyAPI() {
       const job = await getJob();
       setObjectIdLog(job.object_id_logs)
@@ -131,9 +149,7 @@ function Job() {
   }, []);
 
   useEffect(() => {
-    if (status === "successful") {
-
-    }
+    // Status checker
     const interval = setInterval(async () => {
       if (terminatedStatuses.includes(status)) {
         clearInterval(interval);
@@ -151,12 +167,15 @@ function Job() {
 
 
   useEffect(() => {
-    if (status === "pending") {
-      return
+    // Log updater
+    if (status !== "running") {
+      return;
     }
-
     const interval = setInterval(async () => {
-      setLogs(await getLogs(objectIdLog));
+      const newLogs = await getLogs(objectIdLog);
+      setLogs(oldLogs => {
+        return oldLogs.concat(newLogs);
+      });
       if (terminatedStatuses.includes(status)) {
         clearInterval(interval);
         return
@@ -185,7 +204,7 @@ function Job() {
         </VStack>
       </Flex>
       <Box background="black" color="white" fontFamily="mono" borderRadius="lg" p={2} minHeight={10}>
-        {logs ? logs.map((line, index) => <Text key={index}>{line}</Text>) : (<Text color="gray">...</Text>)}
+        {logs.length > 0 ? logs.map((line, index) => <Text key={index}>{line}</Text>) : (<Text color="gray">...</Text>)}
       </Box>
     </VStack>
   </Box >

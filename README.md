@@ -6,11 +6,10 @@ https://user-images.githubusercontent.com/1041380/122805877-5242b280-d2d2-11eb-8
 ## TODO
 ### Application
 - [ ] Authentication
-- [ ] Log offsets
 - [ ] Persistent database layer
 - [ ] Minio for object storage
-- [ ] Handle image pull errors
+- [ ] Handle job run error logging to stdout and database
+- [ ] Support multiple remote executors
 ### Deployment
 - [ ] Docker build and push in Github Actions
-- [ ] Kubernetes manifests
-- [ ] Kubernetes deploy
+- [ ] Deploy to Kubernetes from Github Actions/flux/argo

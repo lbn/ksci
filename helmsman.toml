@@ -1,11 +1,37 @@
 
 [helmRepos]
   bitnami = "https://charts.bitnami.com/bitnami"
-
+  sealed-secrets = "https://bitnami-labs.github.io/sealed-secrets"
+  scylla = "https://scylla-operator-charts.storage.googleapis.com/stable"
+  jetstack = "https://charts.jetstack.io"
 [namespaces]
   [namespaces.default]
+  [namespaces.cert-manager]
+  [namespaces.scylla-operator]
+  [namespaces.scylla-manager]
+  [namespaces.scylla]
 
 [apps]
+  [apps.sealed-secrets]
+    namespace = "kube-system"
+    enabled = true
+    chart = "sealed-secrets/sealed-secrets"
+    version = "1.16.1"
+  [apps.scylla-operator]
+    namespace = "scylla-operator"
+    enabled = true
+    chart = "scylla/scylla-operator"
+    version = "1.3.0"
+  [apps.scylla-manager]
+    namespace = "scylla-manager"
+    enabled = true
+    chart = "scylla/scylla-manager"
+    version = "1.3.0"
+  [apps.scylla]
+    namespace = "scylla"
+    enabled = true
+    chart = "scylla/scylla"
+    version = "1.3.0"
   [apps.redis]
     namespace = "default"
     enabled = true
@@ -18,3 +44,4 @@
     chart = "bitnami/rabbitmq"
     version = "8.16.1"
     valuesFile = "infra/k8s/values/rabbitmq.yaml"
+    

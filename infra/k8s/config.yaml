@@ -3,7 +3,8 @@ kind: ConfigMap
 metadata:
   name: ksci
 data:
-  KSCI_URL: "http://ksci-api.default.svc.cluster.local/"
-  KSCI_REDIS_HOST: "redis-master.default.svc.cluster.local"
-  KSCI_RABBITMQ_HOST: "rabbitmq.default.svc.cluster.local"
+  KSCI_URL: "http://ksci-api.default.svc/"
+  KSCI_REDIS_HOST: "redis-master.default.svc"
+  KSCI_RABBITMQ_HOST: "rabbitmq.default.svc"
   KSCI_RABBITMQ_USERNAME: "ksci"
+  KSCI_CASSANDRA_HOSTS: "scylla-us-east-1-us-east-1a-0.scylla.svc scylla-us-east-1-us-east-1a-1.scylla.svc"

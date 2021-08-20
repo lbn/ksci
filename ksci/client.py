@@ -25,12 +25,32 @@ class KSCIObject:
         self._client.do("PUT", self.path, data=data)
 
 
+class KSCILog:
+    def __init__(self, client: "KSCI", log_id: tp.Optional[str] = None):
+        self._log_id = log_id if log_id else str(uuid.uuid4())
+        self._client = client
+
+    @property
+    def path(self):
+        return f"log/{self._log_id}"
+
+    @property
+    def url(self):
+        return self._client.url_for(self.path)
+
+    def append(self, data: bytes):
+        self._client.do("PATCH", self.path, data=data)
+
+
 class KSCI:
     def __init__(self, base_url: str):
         self._base_url = base_url
 
     def object(self, object_id: tp.Optional[str] = None):
         return KSCIObject(self, object_id)
+
+    def log(self, log_id: tp.Optional[str] = None):
+        return KSCILog(self, log_id)
 
     def url_for(self, path: str) -> str:
         return urllib.parse.urljoin(self._base_url, f"api/{path}")

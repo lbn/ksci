@@ -13,11 +13,7 @@ from ksci.config import config
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 CORS(
-    app,
-    origins=[
-        "http://localhost:3000",
-        config.url,
-    ],
+    app, origins=["http://localhost:3000", config.url,],
 )
 
 
@@ -36,11 +32,7 @@ class SubmitResponse(pydantic.BaseModel):
 @app.route("/api/job/submit", methods=["POST"])
 @validate()
 def job_submit(body: SubmitRequest):
-    job = db.RunJob(
-        image=body.image,
-        repo=body.repo,
-        steps=body.steps,
-    )
+    job = db.RunJob(image=body.image, repo=body.repo, steps=body.steps,)
     job.save()
     tasks.run.delay(job.dict())
     return SubmitResponse(
@@ -75,6 +67,21 @@ def object_upload(object_id):
 def object_append(object_id):
     db.Object(object_id).append(request.get_data())
     return "", 201
+
+
+@app.route("/api/log/<log_id>", methods=["PATCH"])
+def log_append(log_id):
+    db.Log(log_id).append(request.get_data())
+    return "", 201
+
+
+@app.route("/api/log/<log_id>", methods=["GET"])
+def log_download(log_id):
+    try:
+        data, last_log_id = db.Log(log_id).download(request.args.get("after-id"))
+    except db.NotFoundError:
+        return "", 200
+    return Response(data, headers={"Last-Log-ID": last_log_id}, mimetype="text/plain")
 
 
 @app.route("/api/object/<object_id>", methods=["GET"])
