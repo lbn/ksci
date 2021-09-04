@@ -1,17 +1,20 @@
 import typing as tp
 import uuid
 import enum
-import json
 
 import redis
-import pydantic
 import cassandra.cluster
+from cassandra.cqlengine import connection
+from cassandra.cqlengine.models import Model
+from cassandra.cqlengine import columns
 
 from ksci.config import config
 
+KEYSPACE = "ksci"
 
 rclient = redis.from_url(config.redis.url)
-cclient = cassandra.cluster.Cluster(config.cassandra.hosts.split()).connect("ksci")
+cclient = cassandra.cluster.Cluster(config.cassandra.hosts.split()).connect(KEYSPACE)
+connection.setup(config.cassandra.hosts.split(), KEYSPACE)
 
 
 class NotFoundError(Exception):
@@ -22,52 +25,23 @@ def new_id() -> str:
     return str(uuid.uuid4())
 
 
-class RunJobStatus(enum.Enum):
-    pending = "pending"
-    unknown = "unknown"
-    running = "running"
-    succeeded = "succeeded"
-    failed = "failed"
+class RunJobStatusTransition(Model):
+    __keyspace__ = KEYSPACE
+    job_id = columns.TimeUUID(primary_key=True)
+    id = columns.TimeUUID(primary_key=True, default=uuid.uuid1, clustering_order="DESC")
+    status = columns.Text()
+    message = columns.Text()
 
 
-class RunJob(pydantic.BaseModel):
-    job_id: str = pydantic.Field(default_factory=new_id)
-    image: str
-    steps: tp.List[str]
-    object_id_logs: str = pydantic.Field(default_factory=new_id)
-    object_id_output: str = pydantic.Field(default_factory=new_id)
-    repo: str
-    object_id_cv: str = pydantic.Field(default_factory=new_id)
-    status: str = RunJobStatus.pending
-
-    class Config:
-        use_enum_values = True
-
-    @staticmethod
-    def _key(job_id: str):
-        return f"job:{job_id}"
-
-    def update(self, field: str, value: tp.Any):
-        rclient.hset(self._key(self.job_id), field, json.dumps(value))
-
-    def save(self):
-        for key, value in json.loads(self.json()).items():
-            self.update(key, value)
-
-    @classmethod
-    def load(cls, job_id: str) -> "RunJob":
-        if not rclient.exists(cls._key(job_id)):
-            raise NotFoundError()
-        return cls(
-            **{
-                key.decode(): json.loads(value)
-                for key, value in rclient.hgetall(cls._key(job_id)).items()
-            }
-        )
-
-    def to_status(self, status: RunJobStatus):
-        self.status = status
-        self.update("status", status.value)
+class RunJob(Model):
+    __keyspace__ = KEYSPACE
+    id = columns.TimeUUID(primary_key=True, default=uuid.uuid1)
+    image = columns.Text()
+    repo = columns.Text()
+    log_id = columns.UUID(default=uuid.uuid4)
+    output_object_id = columns.UUID(default=uuid.uuid4)
+    repo_object_id = columns.UUID(default=uuid.uuid4)
+    steps = columns.List(columns.Text)
 
 
 class Object:

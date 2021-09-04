@@ -10,6 +10,7 @@ from flask_cors import CORS
 from ksci import tasks
 from ksci import db
 from ksci.config import config
+from ksci import resources
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 CORS(
@@ -24,32 +25,54 @@ class SubmitRequest(pydantic.BaseModel):
 
 
 class SubmitResponse(pydantic.BaseModel):
-    job: db.RunJob
+    job: resources.RunJob
     log: str
     output: str
+
+
+class StatusUpdateRequest(pydantic.BaseModel):
+    status: resources.RunJobStatus
+    message: tp.Optional[str]
 
 
 @app.route("/api/job/submit", methods=["POST"])
 @validate()
 def job_submit(body: SubmitRequest):
-    job = db.RunJob(image=body.image, repo=body.repo, steps=body.steps,)
-    job.save()
-    tasks.run.delay(job.dict())
+    job_resource = resources.RunJob.create(
+        image=body.image, repo=body.repo, steps=body.steps
+    )
+    tasks.run.delay(job_resource.json())
     return SubmitResponse(
-        job=job,
+        job=job_resource,
         log=urllib.parse.urljoin(
-            config.url, url_for("object_download", object_id=job.object_id_logs)
+            config.url, url_for("object_download", object_id=str(job_resource.log_id))
         ),
         output=urllib.parse.urljoin(
-            config.url, url_for("object_download", object_id=job.object_id_output)
+            config.url,
+            url_for("object_download", object_id=str(job_resource.output_object_id)),
         ),
     )
 
 
 @app.route("/api/job/<job_id>", methods=["GET"])
 @validate()
-def job(job_id: str) -> db.RunJob:
-    return db.RunJob.load(job_id)
+def job(job_id: str) -> tp.Optional[resources.RunJob]:
+    return resources.RunJob.load(uuid.UUID(job_id))
+
+
+@app.route("/api/job/<job_id>/status", methods=["GET"])
+@validate()
+def job_status(job_id: str) -> resources.RunJobStatusTransition:
+    return resources.RunJobStatusTransition.last_for_job_id(uuid.UUID(job_id))
+
+
+@app.route("/api/job/<job_id>/status", methods=["PATCH"])
+@validate()
+def job_status_update(job_id: uuid.UUID, body: StatusUpdateRequest):
+    resources.RunJobStatusTransition.update_for_job_id(
+        job_id, body.status, body.message
+    )
+    return "", 201
 
 
 @app.route("/api/object", methods=["POST"])
@@ -81,7 +104,7 @@ def log_download(log_id):
         data, last_log_id = db.Log(log_id).download(request.args.get("after-id"))
     except db.NotFoundError:
         return "", 200
-    return Response(data, headers={"Last-Log-ID": last_log_id}, mimetype="text/plain")
+    return Response(data, headers={"Last-Log-Id": last_log_id}, mimetype="text/plain")
 
 
 @app.route("/api/object/<object_id>", methods=["GET"])

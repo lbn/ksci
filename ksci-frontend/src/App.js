@@ -55,7 +55,7 @@ function Submit() {
         "steps": steps.split("\n"),
       })
     }).then(res => res.json()).then((result) => {
-      history.push(`/job/${result.job.job_id}`);
+      history.push(`/job/${result.job.id}`);
     }, (error) => {
       alert("error", error);
     });
@@ -86,7 +86,7 @@ function Submit() {
 
 function Job() {
   const { jobId } = useParams();
-  const [status, setStatus] = useState("pending");
+  const [status, setStatus] = useState({ status: "unknown" });
   const [job, setJob] = useState({
     repo: "",
     objectIdLogs: null
@@ -104,60 +104,57 @@ function Job() {
   let lastLogID = null;
 
   async function getJob() {
-    return fetch(`/api/job/${jobId}`, {
+    return (await fetch(`/api/job/${jobId}`, {
       headers: {
         "accepts": "application/json"
       }
-    }).then(res => res.json()).then(async (job) => {
-      return job;
-    }, (error) => {
-      // alert("error")
-    })
+    })).json();
   }
-  function getLogs(objectId) {
+  async function getStatus() {
+    const res = await fetch(`/api/job/${jobId}/status`, {
+      headers: {
+        "accepts": "application/json"
+      }
+    });
+    return res.json()
+  }
+  async function getLogs(objectId) {
     let params = {};
     if (lastLogID != null) {
       params["after-id"] = lastLogID;
     }
-    return fetch(`/api/log/${objectId}?` + new URLSearchParams(params), {
+    const res = await fetch(`/api/log/${objectId}?` + new URLSearchParams(params), {
       headers: {
         "accepts": "application/json"
       }
-    }).then((res) => {
-      return res.text().then(logLines => {
-        if (logLines.length > 0) {
-          lastLogID = res.headers.get("Last-Log-Id");
-        }
-        return logLines.split("\n");
-      })
-    }, (error) => {
-      // alert("error")
-    })
+    });
+    const logLines = await res.text();
+    if (logLines.length > 0) {
+      lastLogID = res.headers.get("Last-Log-Id");
+    }
+    return logLines.split("\n");
   }
   useEffect(() => {
-    // Get job, status and final logs
-    async function fetchMyAPI() {
-      const job = await getJob();
-      setObjectIdLog(job.object_id_logs)
-      if (terminatedStatuses.includes(job.status)) {
-        setLogs(await getLogs(job.object_id_logs));
-      }
-      setJob(job);
-      setStatus(job.status);
+    async function init() {
+      // Initial job load
+      const jobRes = await getJob();
+      setJob(jobRes);
+      setLogs(await getLogs(jobRes.log_id));
+      setObjectIdLog(jobRes.log_id);
     }
-    fetchMyAPI();
+    init();
   }, []);
 
   useEffect(() => {
-    // Status checker
+    // Status updater
     const interval = setInterval(async () => {
-      if (terminatedStatuses.includes(status)) {
+      const newStatus = await getStatus();
+      if (newStatus.id !== status.id) {
+        setStatus(newStatus);
+      }
+      if (terminatedStatuses.includes(status.status)) {
         clearInterval(interval);
         return
-      }
-      const newStatus = (await getJob()).status;
-      if (newStatus !== status) {
-        setStatus(newStatus);
       }
     }, 1000);
     return () => {
@@ -167,8 +164,8 @@ function Job() {
 
 
   useEffect(() => {
-    // Log updater
-    if (status !== "running") {
+    // Log updater for "running" only
+    if (status.status !== "running") {
       return;
     }
     const interval = setInterval(async () => {
@@ -176,7 +173,7 @@ function Job() {
       setLogs(oldLogs => {
         return oldLogs.concat(newLogs);
       });
-      if (terminatedStatuses.includes(status)) {
+      if (terminatedStatuses.includes(status.status)) {
         clearInterval(interval);
         return
       }
@@ -197,10 +194,10 @@ function Job() {
         </Box>
         <Spacer />
         <VStack p="2">
-          <Badge ml="1" colorScheme={colours[status]}>
-            {status}
+          <Badge ml="1" colorScheme={colours[status.status]}>
+            {status.status}
           </Badge>
-          <Button as="a" href={`/api/object/${job.object_id_output}?output`} target="blank" leftIcon={<DownloadIcon />} colorScheme="blue" size="sm" disabled={status !== "succeeded"}>Download</Button>
+          <Button as="a" href={`/api/object/${job.output_object_id}?output`} target="blank" leftIcon={<DownloadIcon />} colorScheme="blue" size="sm" disabled={status.status !== "succeeded"}>Download</Button>
         </VStack>
       </Flex>
       <Box background="black" color="white" fontFamily="mono" borderRadius="lg" p={2} minHeight={10}>

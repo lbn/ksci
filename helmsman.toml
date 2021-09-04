@@ -12,26 +12,22 @@
   [namespaces.scylla]
 
 [apps]
-  [apps.sealed-secrets]
-    namespace = "kube-system"
-    enabled = true
-    chart = "sealed-secrets/sealed-secrets"
-    version = "1.16.1"
   [apps.scylla-operator]
     namespace = "scylla-operator"
     enabled = true
     chart = "scylla/scylla-operator"
-    version = "1.3.0"
+    version = "1.4.0"
   [apps.scylla-manager]
     namespace = "scylla-manager"
     enabled = true
     chart = "scylla/scylla-manager"
-    version = "1.3.0"
+    version = "1.4.0"
   [apps.scylla]
     namespace = "scylla"
     enabled = true
     chart = "scylla/scylla"
-    version = "1.3.0"
+    version = "1.4.0"
+    valuesFile = "infra/k8s/values/scylla.yaml"
   [apps.redis]
     namespace = "default"
     enabled = true
