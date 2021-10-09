@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: ksci-api
-          image: larcher/ksci
+          image: larcher/kscipy
           envFrom:
             - configMapRef:
                 name: ksci
@@ -25,6 +25,16 @@ spec:
                 secretKeyRef:
                   name: rabbitmq
                   key: rabbitmq-password
+            - name: KSCI_CASSANDRA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: cassandra
+                  key: username
+            - name: KSCI_CASSANDRA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cassandra
+                  key: password
           command:
             ["python", "-m", "flask", "run", "-h", "0.0.0.0", "-p", "8000"]
           ports:

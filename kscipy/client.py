@@ -5,8 +5,8 @@ import json
 
 import requests
 
-from ksci import resources
-from ksci import api
+from kscipy import resources
+from kscipy import api
 
 
 class KSCIObject:

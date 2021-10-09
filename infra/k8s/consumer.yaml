@@ -1,30 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ksci-worker
+  name: ksci-consumer
   labels:
-    app: ksci-worker
+    app: ksci-consumer
 spec:
   selector:
     matchLabels:
-      app: ksci-worker
+      app: ksci-consumer
   template:
     metadata:
       labels:
-        app: ksci-worker
+        app: ksci-consumer
     spec:
       containers:
-        - name: ksci-worker
-          image: larcher/kscipy
+        - name: ksci-consumer
+          image: larcher/ksci-consumer
           envFrom:
             - configMapRef:
                 name: ksci
           env:
-            - name: KSCI_RABBITMQ_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: rabbitmq
-                  key: rabbitmq-password
             - name: KSCI_CASSANDRA_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -35,4 +30,3 @@ spec:
                 secretKeyRef:
                   name: cassandra
                   key: password
-          command: ["celery", "-A", "kscipy.tasks", "worker", "--loglevel=INFO"]

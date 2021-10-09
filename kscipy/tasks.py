@@ -1,16 +1,18 @@
-import os
 import typing as tp
 import tempfile
 import io
+from kafka import KafkaProducer
 
 import celery
 import kubernetes
 import kubernetes.client as klient
 import git
 
-from ksci import client
-from ksci.config import config
-from ksci import resources
+
+from kscipy import client
+from kscipy.config import config
+from kscipy import resources
+from kscipy import pubsub
 
 NAMESPACE_JOBS = "jobs"
 
@@ -123,6 +125,7 @@ def watch_pod_phase(job: resources.RunJob) -> klient.V1Pod:
             new_status = event["object"].status.phase.lower()
             job_status = resources.RunJobStatus(new_status)
             if new_status != status:
+                # TODO: use Kafka to do this
                 ksci_client.job(job.id).to_status(job_status)
                 status = new_status
             if not started_log and job_status in (
@@ -133,6 +136,7 @@ def watch_pod_phase(job: resources.RunJob) -> klient.V1Pod:
             if job_status in termination_statuses:
                 watch.stop()
         except Exception as err:
+            # TODO: use Kafka to do this
             print("Exception:")
             print(err)
 
@@ -161,16 +165,30 @@ def run(job_data: str):
         create_job(job)
         watch_pod_phase(job)
     except klient.ApiException as e:
+        # TODO: use Kafka to do this
         job.to_status(resources.RunJobStatus.failed)
+
+
+_producer = None
+
+
+def get_producer():
+    global _producer
+    if _producer is None:
+        _producer = KafkaProducer(bootstrap_servers=config.kafka.hosts)
+    return _producer
 
 
 @celery_app.task
 def log_writer(job_data: str, pod_name: str):
-    job = resources.RunJob.parse_raw(job_data)
-    kscii_log = ksci_client.log(job.log_id)
-    core_v1 = klient.CoreV1Api()
-    watch = kubernetes.watch.Watch()
-    for line in watch.stream(
-        core_v1.read_namespaced_pod_log, name=pod_name, namespace=NAMESPACE_JOBS,
-    ):
-        kscii_log.append((line + "\n").encode())
+    try:
+        job = resources.RunJob.parse_raw(job_data)
+        core_v1 = klient.CoreV1Api()
+        watch = kubernetes.watch.Watch()
+        for line in watch.stream(
+            core_v1.read_namespaced_pod_log, name=pod_name, namespace=NAMESPACE_JOBS,
+        ):
+            pubsub.send_log(get_producer(), job, line)
+    except Exception as err:
+        print(err)
+        raise

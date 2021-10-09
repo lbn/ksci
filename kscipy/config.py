@@ -17,6 +17,12 @@ class AppConfig:
     @environ.config
     class Cassandra:
         hosts = environ.var()
+        username = environ.var()
+        password = environ.var()
+
+    @environ.config
+    class Kafka:
+        hosts = environ.var()
 
     @environ.config
     class RabbitMQ:
@@ -32,6 +38,7 @@ class AppConfig:
     rabbitmq: RabbitMQ = environ.group(RabbitMQ)
     redis: Redis = environ.group(Redis)
     cassandra: Cassandra = environ.group(Cassandra)
+    kafka: Kafka = environ.group(Kafka)
 
 
 config: AppConfig = AppConfig.from_environ()

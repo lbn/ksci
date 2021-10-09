@@ -7,4 +7,5 @@ data:
   KSCI_REDIS_HOST: "redis-master.default.svc"
   KSCI_RABBITMQ_HOST: "rabbitmq.default.svc"
   KSCI_RABBITMQ_USERNAME: "ksci"
-  KSCI_CASSANDRA_HOSTS: "scylla-us-east-1-us-east-1a-0.scylla.svc scylla-us-east-1-us-east-1a-1.scylla.svc"
+  KSCI_CASSANDRA_HOSTS: "k8ssandra-dc1-service.cassandra.svc"
+  KSCI_KAFKA_HOSTS: "ksci-kafka-brokers.kafka.svc:9092"

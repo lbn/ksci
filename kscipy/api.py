@@ -7,10 +7,10 @@ from flask_pydantic import validate
 import pydantic
 from flask_cors import CORS
 
-from ksci import tasks
-from ksci import db
-from ksci.config import config
-from ksci import resources
+from kscipy import tasks
+from kscipy import db
+from kscipy.config import config
+from kscipy import resources
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 CORS(

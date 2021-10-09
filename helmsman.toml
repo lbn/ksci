@@ -1,33 +1,21 @@
 
 [helmRepos]
   bitnami = "https://charts.bitnami.com/bitnami"
-  sealed-secrets = "https://bitnami-labs.github.io/sealed-secrets"
-  scylla = "https://scylla-operator-charts.storage.googleapis.com/stable"
+  k8ssandra = "https://helm.k8ssandra.io/stable"
   jetstack = "https://charts.jetstack.io"
+  strimzi = "https://strimzi.io/charts"
 [namespaces]
   [namespaces.default]
   [namespaces.cert-manager]
-  [namespaces.scylla-operator]
-  [namespaces.scylla-manager]
-  [namespaces.scylla]
-
+  [namespaces.cassandra]
+  [namespaces.kafka]
 [apps]
-  [apps.scylla-operator]
-    namespace = "scylla-operator"
+  [apps.k8ssandra]
+    namespace = "cassandra"
     enabled = true
-    chart = "scylla/scylla-operator"
-    version = "1.4.0"
-  [apps.scylla-manager]
-    namespace = "scylla-manager"
-    enabled = true
-    chart = "scylla/scylla-manager"
-    version = "1.4.0"
-  [apps.scylla]
-    namespace = "scylla"
-    enabled = true
-    chart = "scylla/scylla"
-    version = "1.4.0"
-    valuesFile = "infra/k8s/values/scylla.yaml"
+    chart = "k8ssandra/k8ssandra"
+    version = "1.3.1"
+    valuesFile = "infra/k8s/values/cassandra.yaml"
   [apps.redis]
     namespace = "default"
     enabled = true
@@ -40,4 +28,8 @@
     chart = "bitnami/rabbitmq"
     version = "8.16.1"
     valuesFile = "infra/k8s/values/rabbitmq.yaml"
-    
+  [apps.kafka]
+    namespace = "kafka"
+    enabled = true
+    chart = "strimzi/strimzi-kafka-operator"
+    version = "0.25.0"

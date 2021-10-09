@@ -1,8 +1,8 @@
-from ksci import testhelper
+from kscipy import testhelper
 
 testhelper.configure()
 
-from ksci.resources import *
+from kscipy.resources import *
 
 
 class TestRunJob:

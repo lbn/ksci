@@ -7,22 +7,24 @@ import cassandra.cluster
 from cassandra.cqlengine import connection
 from cassandra.cqlengine.models import Model
 from cassandra.cqlengine import columns
+from cassandra import auth
 
-from ksci.config import config
+from kscipy.config import config
 
 KEYSPACE = "ksci"
 
 rclient = redis.from_url(config.redis.url)
-cclient = cassandra.cluster.Cluster(config.cassandra.hosts.split()).connect(KEYSPACE)
-connection.setup(config.cassandra.hosts.split(), KEYSPACE)
+auth_provider = auth.PlainTextAuthProvider(
+    username=config.cassandra.username, password=config.cassandra.password
+)
+cclient = cassandra.cluster.Cluster(
+    config.cassandra.hosts.split(), auth_provider=auth_provider
+).connect(KEYSPACE)
+connection.setup(config.cassandra.hosts.split(), KEYSPACE, auth_provider=auth_provider)
 
 
 class NotFoundError(Exception):
     pass
-
-
-def new_id() -> str:
-    return str(uuid.uuid4())
 
 
 class RunJobStatusTransition(Model):

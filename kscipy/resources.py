@@ -4,7 +4,7 @@ import enum
 
 import pydantic
 
-from ksci import db
+from kscipy import db
 
 
 class RunJobStatus(enum.Enum):
