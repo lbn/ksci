@@ -192,3 +192,192 @@ func (p *LogWrite) String() string {
   return fmt.Sprintf("LogWrite(%+v)", *p)
 }
 
+// Attributes:
+//  - JobID
+//  - Status
+//  - Message
+type JobStatusUpdate struct {
+  JobID []byte `thrift:"job_id,1" db:"job_id" json:"job_id"`
+  Status string `thrift:"status,2" db:"status" json:"status"`
+  Message *string `thrift:"message,3" db:"message" json:"message,omitempty"`
+}
+
+func NewJobStatusUpdate() *JobStatusUpdate {
+  return &JobStatusUpdate{}
+}
+
+
+func (p *JobStatusUpdate) GetJobID() []byte {
+  return p.JobID
+}
+
+func (p *JobStatusUpdate) GetStatus() string {
+  return p.Status
+}
+var JobStatusUpdate_Message_DEFAULT string
+func (p *JobStatusUpdate) GetMessage() string {
+  if !p.IsSetMessage() {
+    return JobStatusUpdate_Message_DEFAULT
+  }
+return *p.Message
+}
+func (p *JobStatusUpdate) IsSetMessage() bool {
+  return p.Message != nil
+}
+
+func (p *JobStatusUpdate) Read(ctx context.Context, iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(ctx); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin(ctx)
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if fieldTypeId == thrift.STRING {
+        if err := p.ReadField1(ctx, iprot); err != nil {
+          return err
+        }
+      } else {
+        if err := iprot.Skip(ctx, fieldTypeId); err != nil {
+          return err
+        }
+      }
+    case 2:
+      if fieldTypeId == thrift.STRING {
+        if err := p.ReadField2(ctx, iprot); err != nil {
+          return err
+        }
+      } else {
+        if err := iprot.Skip(ctx, fieldTypeId); err != nil {
+          return err
+        }
+      }
+    case 3:
+      if fieldTypeId == thrift.STRING {
+        if err := p.ReadField3(ctx, iprot); err != nil {
+          return err
+        }
+      } else {
+        if err := iprot.Skip(ctx, fieldTypeId); err != nil {
+          return err
+        }
+      }
+    default:
+      if err := iprot.Skip(ctx, fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(ctx); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(ctx); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *JobStatusUpdate)  ReadField1(ctx context.Context, iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadBinary(ctx); err != nil {
+  return thrift.PrependError("error reading field 1: ", err)
+} else {
+  p.JobID = v
+}
+  return nil
+}
+
+func (p *JobStatusUpdate)  ReadField2(ctx context.Context, iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(ctx); err != nil {
+  return thrift.PrependError("error reading field 2: ", err)
+} else {
+  p.Status = v
+}
+  return nil
+}
+
+func (p *JobStatusUpdate)  ReadField3(ctx context.Context, iprot thrift.TProtocol) error {
+  if v, err := iprot.ReadString(ctx); err != nil {
+  return thrift.PrependError("error reading field 3: ", err)
+} else {
+  p.Message = &v
+}
+  return nil
+}
+
+func (p *JobStatusUpdate) Write(ctx context.Context, oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin(ctx, "JobStatusUpdate"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(ctx, oprot); err != nil { return err }
+    if err := p.writeField2(ctx, oprot); err != nil { return err }
+    if err := p.writeField3(ctx, oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(ctx); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(ctx); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *JobStatusUpdate) writeField1(ctx context.Context, oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin(ctx, "job_id", thrift.STRING, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:job_id: ", p), err) }
+  if err := oprot.WriteBinary(ctx, p.JobID); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.job_id (1) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(ctx); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:job_id: ", p), err) }
+  return err
+}
+
+func (p *JobStatusUpdate) writeField2(ctx context.Context, oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin(ctx, "status", thrift.STRING, 2); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:status: ", p), err) }
+  if err := oprot.WriteString(ctx, string(p.Status)); err != nil {
+  return thrift.PrependError(fmt.Sprintf("%T.status (2) field write error: ", p), err) }
+  if err := oprot.WriteFieldEnd(ctx); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 2:status: ", p), err) }
+  return err
+}
+
+func (p *JobStatusUpdate) writeField3(ctx context.Context, oprot thrift.TProtocol) (err error) {
+  if p.IsSetMessage() {
+    if err := oprot.WriteFieldBegin(ctx, "message", thrift.STRING, 3); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:message: ", p), err) }
+    if err := oprot.WriteString(ctx, string(*p.Message)); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T.message (3) field write error: ", p), err) }
+    if err := oprot.WriteFieldEnd(ctx); err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T write field end error 3:message: ", p), err) }
+  }
+  return err
+}
+
+func (p *JobStatusUpdate) Equals(other *JobStatusUpdate) bool {
+  if p == other {
+    return true
+  } else if p == nil || other == nil {
+    return false
+  }
+  if bytes.Compare(p.JobID, other.JobID) != 0 { return false }
+  if p.Status != other.Status { return false }
+  if p.Message != other.Message {
+    if p.Message == nil || other.Message == nil {
+      return false
+    }
+    if (*p.Message) != (*other.Message) { return false }
+  }
+  return true
+}
+
+func (p *JobStatusUpdate) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("JobStatusUpdate(%+v)", *p)
+}
+

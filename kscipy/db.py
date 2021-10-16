@@ -61,7 +61,7 @@ class Object:
             raise NotFoundError()
         if rclient.type(self._key).decode() == "list":
             return b"".join(rclient.lrange(self._key, 0, -1))
-        return rclient.get(self._key)
+        return rclient.get(self._key) or b""
 
 
 class Log:

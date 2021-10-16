@@ -16,5 +16,6 @@ docker_build(
 k8s_yaml(listdir("infra/k8s"))
 k8s_resource("ksci-api")
 k8s_resource("ksci-worker")
-k8s_resource("ksci-consumer")
+k8s_resource("ksci-logwriter")
+k8s_resource("ksci-statuschange")
 k8s_resource("ksci-frontend")

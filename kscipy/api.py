@@ -1,78 +1,24 @@
 import typing as tp
 import uuid
-import urllib.parse
 
-from flask import Flask, request, Response, url_for
-from flask_pydantic import validate
-import pydantic
+from flask import Flask, request, Response
 from flask_cors import CORS
 
-from kscipy import tasks
 from kscipy import db
 from kscipy.config import config
-from kscipy import resources
+from kscipy.app import job
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 CORS(
-    app, origins=["http://localhost:3000", config.url,],
+    app,
+    origins=[
+        "http://localhost:3000",
+        config.url,
+    ],
 )
 
 
-class SubmitRequest(pydantic.BaseModel):
-    image: str
-    repo: str
-    steps: tp.List[str]
-
-
-class SubmitResponse(pydantic.BaseModel):
-    job: resources.RunJob
-    log: str
-    output: str
-
-
-class StatusUpdateRequest(pydantic.BaseModel):
-    status: resources.RunJobStatus
-    message: tp.Optional[str]
-
-
-@app.route("/api/job/submit", methods=["POST"])
-@validate()
-def job_submit(body: SubmitRequest):
-    job_resource = resources.RunJob.create(
-        image=body.image, repo=body.repo, steps=body.steps
-    )
-    tasks.run.delay(job_resource.json())
-    return SubmitResponse(
-        job=job_resource,
-        log=urllib.parse.urljoin(
-            config.url, url_for("object_download", object_id=str(job_resource.log_id))
-        ),
-        output=urllib.parse.urljoin(
-            config.url,
-            url_for("object_download", object_id=str(job_resource.output_object_id)),
-        ),
-    )
-
-
-@app.route("/api/job/<job_id>", methods=["GET"])
-@validate()
-def job(job_id: str) -> tp.Optional[resources.RunJob]:
-    return resources.RunJob.load(uuid.UUID(job_id))
-
-
-@app.route("/api/job/<job_id>/status", methods=["GET"])
-@validate()
-def job_status(job_id: str) -> resources.RunJobStatusTransition:
-    return resources.RunJobStatusTransition.last_for_job_id(uuid.UUID(job_id))
-
-
-@app.route("/api/job/<job_id>/status", methods=["PATCH"])
-@validate()
-def job_status_update(job_id: uuid.UUID, body: StatusUpdateRequest):
-    resources.RunJobStatusTransition.update_for_job_id(
-        job_id, body.status, body.message
-    )
-    return "", 201
+app.register_blueprint(job.routes.app)
 
 
 @app.route("/api/object", methods=["POST"])

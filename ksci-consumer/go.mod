@@ -7,6 +7,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gocql/gocql v0.0.0-20210817081954-bc256bbb90de // indirect
 	github.com/golang/snappy v0.0.3 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/hailocab/go-hostpool v0.0.0-20160125115350-e80d13ce29ed // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/klauspost/compress v1.9.8 // indirect

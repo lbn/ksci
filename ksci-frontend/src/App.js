@@ -38,7 +38,7 @@ import { ColorModeSwitcher } from "./ColorModeSwitcher";
 function Submit() {
   const [image, setImage] = useState("golang:latest");
   const [repo, setRepo] = useState("https://github.com/lbn/ksci");
-  const [steps, setSteps] = useState("cd ksci-finaliser\ngo build -o /output/ksci-finaliser\necho done!");
+  const [steps, setSteps] = useState("cd ksci-finaliser\nfor i in $(seq 1 10); do echo $i && sleep 1; done\ngo build -o /output/ksci-finaliser\necho done!");
   const [isLoading, setIsLoading] = useState(false);
   const history = useHistory();
   const handleSubmit = event => {

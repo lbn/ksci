@@ -1,21 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ksci-consumer
+  name: ksci-logwriter
   labels:
-    app: ksci-consumer
+    app: ksci-logwriter
 spec:
   selector:
     matchLabels:
-      app: ksci-consumer
+      app: ksci-logwriter
   template:
     metadata:
       labels:
-        app: ksci-consumer
+        app: ksci-logwriter
     spec:
       containers:
-        - name: ksci-consumer
+        - name: ksci-logwriter
           image: larcher/ksci-consumer
+          command: ["/usr/local/bin/logwriter"]
           envFrom:
             - configMapRef:
                 name: ksci
