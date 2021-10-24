@@ -16,7 +16,7 @@ from kscipy.config import config
 from kscipy.data.job import ttypes as job_ttypes
 
 
-kubernetes.config.load_incluster_config()
+# kubernetes.config.load_incluster_config()
 NAMESPACE_JOBS = "jobs"
 
 _producer = None

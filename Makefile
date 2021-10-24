@@ -5,5 +5,6 @@ thrift:
 	mv data/build/gen-py/ksci/* kscipy/data/
 	mv data/build/gen-go/ksci/* ksci-consumer/data
 docker-build:
-	docker build -t 10.42.0.1:5000/ksci -f infra/docker/ksci.dockerfile ksci
-	docker build -t 10.42.0.1:5000/ksci-prep -f infra/docker/ksci-prep.dockerfile ksci-finaliser
+	docker build -t larcher/ksci -f infra/docker/ksci.dockerfile ksci
+	docker build -t larcher/ksci-prep -f infra/docker/ksci-prep.dockerfile ksci-finaliser
+	docker build -t larcher/ksci-flink-jobdurations -f infra/docker/flink.dockerfile flink/jobdurations

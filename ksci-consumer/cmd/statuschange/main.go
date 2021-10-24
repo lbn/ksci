@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gocql/gocql"
 	"github.com/segmentio/kafka-go"
 
 	"github.com/lbn/ksci/ksci-consumer/data/job"
